@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FORMA — Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Serif+Display:ital@0;1&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0a0a0a;
+    --paper: #f2ede6;
+    --acid: #c8ff00;
+    --rust: #c84b1f;
+    --slate: #2d2d2d;
+    --mist: #e0dbd2;
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; overflow-x: hidden; }
+
+  body {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Space Mono', monospace;
+    cursor: none;
+  }
+
+  /* CUSTOM CURSOR */
+  .cursor {
+    position: fixed;
+    width: 12px; height: 12px;
+    background: var(--acid);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transition: transform 0.1s ease;
+    mix-blend-mode: difference;
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 40px; height: 40px;
+    border: 1px solid var(--acid);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transition: all 0.2s ease;
+    mix-blend-mode: difference;
+  }
+
+  /* LOADER */
+  #loader {
+    position: fixed; inset: 0;
+    background: var(--ink);
+    z-index: 9000;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+    gap: 2rem;
+  }
+  .loader-text {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(60px, 15vw, 180px);
+    letter-spacing: 0.02em;
+    color: var(--paper);
+    overflow: hidden;
+  }
+  .loader-text span {
+    display: inline-block;
+    animation: slideUp 0.8s cubic-bezier(0.77,0,0.175,1) forwards;
+    transform: translateY(120%);
+  }
+  .loader-bar {
+    width: 300px; height: 2px;
+    background: var(--slate);
+    position: relative;
+    overflow: hidden;
+  }
+  .loader-bar::after {
+    content: '';
+    position: absolute; left: -100%; top: 0;
+    width: 100%; height: 100%;
+    background: var(--acid);
+    animation: loadFill 1.8s cubic-bezier(0.77,0,0.175,1) forwards;
+    animation-delay: 0.3s;
+  }
+  @keyframes slideUp {
+    to { transform: translateY(0); }
+  }
+  @keyframes loadFill {
+    to { left: 100%; }
+  }
+
+  /* NAVBAR */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 2rem 3rem;
+    mix-blend-mode: difference;
+  }
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 0.1em;
+    color: var(--paper);
+    text-decoration: none;
+  }
+  .nav-links {
+    display: flex; gap: 2.5rem; list-style: none;
+  }
+  .nav-links a {
+    font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--paper); text-decoration: none;
+    position: relative;
+  }
+  .nav-links a::after {
+    content: ''; position: absolute; bottom: -3px; left: 0;
+    width: 0; height: 1px; background: var(--acid);
+    transition: width 0.3s ease;
+  }
+  .nav-links a:hover::after { width: 100%; }
+
+  /* HERO */
+  #hero {
+    height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-left {
+    display: flex; flex-direction: column;
+    justify-content: flex-end;
+    padding: 6rem 3rem 5rem;
+    position: relative; z-index: 2;
+  }
+  .hero-eyebrow {
+    font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--acid); margin-bottom: 1.5rem;
+    opacity: 0; animation: fadeIn 0.6s ease forwards;
+    animation-delay: 2.2s;
+  }
+  .hero-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(80px, 11vw, 160px);
+    line-height: 0.92;
+    letter-spacing: -0.01em;
+    overflow: hidden;
+    margin-bottom: 3rem;
+  }
+  .hero-title .line {
+    display: block; overflow: hidden;
+  }
+  .hero-title .line span {
+    display: block;
+    transform: translateY(110%);
+    animation: slideUp 0.9s cubic-bezier(0.77,0,0.175,1) forwards;
+  }
+  .hero-title .line:nth-child(1) span { animation-delay: 2.2s; }
+  .hero-title .line:nth-child(2) span { animation-delay: 2.35s; }
+  .hero-title .line:nth-child(3) span { animation-delay: 2.5s; }
+  .hero-title .accent { color: var(--acid); }
+  .hero-subtitle {
+    font-size: 13px; line-height: 1.8; max-width: 360px;
+    color: #999; opacity: 0;
+    animation: fadeIn 0.6s ease forwards;
+    animation-delay: 2.7s;
+  }
+  .hero-right {
+    position: relative; overflow: hidden;
+  }
+  .hero-canvas {
+    width: 100%; height: 100%;
+    display: block;
+  }
+  .hero-scroll {
+    position: absolute; bottom: 3rem; right: 3rem;
+    display: flex; align-items: center; gap: 1rem;
+    font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase;
+    color: #666; opacity: 0;
+    animation: fadeIn 0.6s ease forwards;
+    animation-delay: 3s;
+  }
+  .scroll-line {
+    width: 60px; height: 1px; background: #444;
+    position: relative; overflow: hidden;
+  }
+  .scroll-line::after {
+    content: ''; position: absolute; top: 0; left: -100%;
+    width: 100%; height: 100%; background: var(--acid);
+    animation: scanline 2s ease infinite;
+    animation-delay: 3.5s;
+  }
+  @keyframes scanline { to { left: 100%; } }
+  @keyframes fadeIn { to { opacity: 1; } }
+
+  /* MARQUEE */
+  .marquee-wrap {
+    background: var(--acid);
+    overflow: hidden; padding: 1.2rem 0;
+  }
+  .marquee-track {
+    display: flex; gap: 4rem;
+    white-space: nowrap;
+    animation: marquee 18s linear infinite;
+  }
+  .marquee-item {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px; letter-spacing: 0.05em;
+    color: var(--ink); flex-shrink: 0;
+    display: flex; align-items: center; gap: 2rem;
+  }
+  .marquee-dot {
+    width: 8px; height: 8px;
+    border: 2px solid var(--ink); border-radius: 50%;
+  }
+  @keyframes marquee { to { transform: translateX(-50%); } }
+
+  /* SECTIONS */
+  section { padding: 8rem 3rem; }
+  .section-label {
+    font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--acid); margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .section-label::before {
+    content: ''; width: 30px; height: 1px; background: var(--acid);
+  }
+
+  /* ABOUT */
+  #about {
+    background: var(--paper);
+    color: var(--ink);
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 6rem;
+    align-items: center;
+  }
+  .about-left .section-label { color: var(--rust); }
+  .about-left .section-label::before { background: var(--rust); }
+  .about-heading {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(40px, 5vw, 72px);
+    line-height: 1.05;
+    margin-bottom: 2rem;
+  }
+  .about-heading em { font-style: italic; color: var(--rust); }
+  .about-text { font-size: 13px; line-height: 1.9; color: #555; max-width: 420px; }
+  .about-stats {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 2px; margin-top: 4rem;
+  }
+  .stat-box {
+    background: var(--ink); color: var(--paper);
+    padding: 2.5rem 2rem;
+  }
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 64px; line-height: 1;
+    color: var(--acid);
+  }
+  .stat-label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: #888; margin-top: 0.5rem; }
+  .about-right {
+    position: relative;
+    height: 600px;
+  }
+  .about-grid-art {
+    width: 100%; height: 100%;
+  }
+
+  /* VISION */
+  #vision {
+    background: var(--ink);
+    position: relative; overflow: hidden;
+  }
+  .vision-header {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-bottom: 6rem;
+  }
+  .vision-heading {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(60px, 10vw, 140px);
+    line-height: 0.9;
+    letter-spacing: -0.01em;
+  }
+  .vision-heading .outline {
+    -webkit-text-stroke: 1px var(--paper);
+    color: transparent;
+  }
+  .vision-intro { max-width: 300px; font-size: 13px; line-height: 1.8; color: #777; }
+  .vision-cards {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;
+  }
+  .vision-card {
+    border: 1px solid #222;
+    padding: 3rem 2.5rem;
+    position: relative; overflow: hidden;
+    transition: border-color 0.3s ease;
+  }
+  .vision-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: var(--acid); transform: scaleY(0);
+    transform-origin: bottom;
+    transition: transform 0.4s cubic-bezier(0.77,0,0.175,1);
+    z-index: 0;
+  }
+  .vision-card:hover::before { transform: scaleY(1); }
+  .vision-card:hover { color: var(--ink); border-color: var(--acid); }
+  .vision-card * { position: relative; z-index: 1; }
+  .vision-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 80px; color: #1a1a1a; line-height: 1;
+    margin-bottom: 1.5rem;
+    transition: color 0.3s ease;
+  }
+  .vision-card:hover .vision-num { color: rgba(0,0,0,0.15); }
+  .vision-card-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 24px; margin-bottom: 1rem;
+  }
+  .vision-card-text { font-size: 12px; line-height: 1.8; color: #666; transition: color 0.3s ease; }
+  .vision-card:hover .vision-card-text { color: #333; }
+
+  /* PROJECTS */
+  #projects { background: var(--slate); padding: 8rem 0; }
+  .projects-header {
+    padding: 0 3rem; margin-bottom: 4rem;
+    display: flex; justify-content: space-between; align-items: flex-end;
+  }
+  .projects-heading {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(50px, 8vw, 110px);
+    line-height: 0.9;
+  }
+  .projects-heading span { color: var(--acid); }
+  .view-all {
+    font-size: 11px; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--acid);
+    text-decoration: none;
+    border-bottom: 1px solid var(--acid);
+    padding-bottom: 3px;
+  }
+  .projects-scroll {
+    display: flex; gap: 2px; overflow-x: auto;
+    padding: 0 3rem;
+    scrollbar-width: none;
+  }
+  .project-card {
+    flex: 0 0 400px;
+    position: relative; overflow: hidden;
+    height: 540px;
+    cursor: pointer;
+  }
+  .project-canvas {
+    width: 100%; height: 100%; display: block;
+    transition: transform 0.6s ease;
+  }
+  .project-card:hover .project-canvas { transform: scale(1.05); }
+  .project-info {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.9));
+    padding: 3rem 2rem 2rem;
+    transform: translateY(60px);
+    transition: transform 0.4s ease;
+  }
+  .project-card:hover .project-info { transform: translateY(0); }
+  .project-type { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--acid); margin-bottom: 0.5rem; }
+  .project-name { font-family: 'DM Serif Display', serif; font-size: 26px; margin-bottom: 0.5rem; }
+  .project-loc { font-size: 11px; color: #888; }
+  .project-year {
+    position: absolute; top: 1.5rem; right: 1.5rem;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px; letter-spacing: 0.1em;
+    background: var(--acid); color: var(--ink);
+    padding: 4px 10px;
+  }
+
+  /* INNOVATION */
+  #innovation {
+    background: var(--paper); color: var(--ink);
+    display: grid; grid-template-columns: 1.2fr 1fr;
+    gap: 6rem; align-items: center;
+  }
+  #innovation .section-label { color: var(--rust); }
+  #innovation .section-label::before { background: var(--rust); }
+  .innov-heading {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(50px, 7vw, 100px);
+    line-height: 0.9;
+    margin: 1.5rem 0 2rem;
+  }
+  .innov-heading .line2 { color: var(--rust); }
+  .innov-text { font-size: 13px; line-height: 1.9; color: #555; margin-bottom: 3rem; }
+  .innov-pills { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .pill {
+    border: 1px solid var(--ink);
+    padding: 0.6rem 1.4rem;
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.3s ease;
+  }
+  .pill:hover { background: var(--ink); color: var(--paper); }
+  .innov-art {
+    height: 500px; position: relative;
+  }
+  .innov-canvas { width: 100%; height: 100%; }
+
+  /* CONNECT */
+  #connect {
+    background: var(--ink);
+    text-align: center;
+    padding: 10rem 3rem;
+    position: relative; overflow: hidden;
+  }
+  .connect-bg-text {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(100px, 20vw, 280px);
+    color: #111;
+    white-space: nowrap; pointer-events: none;
+    letter-spacing: -0.02em;
+  }
+  .connect-content { position: relative; z-index: 1; }
+  .connect-label {
+    font-size: 10px; letter-spacing: 0.25em;
+    text-transform: uppercase; color: var(--acid);
+    margin-bottom: 2rem;
+  }
+  .connect-heading {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(40px, 6vw, 90px);
+    line-height: 1.1; margin-bottom: 1.5rem;
+  }
+  .connect-heading em { font-style: italic; color: var(--acid); }
+  .connect-sub { font-size: 13px; color: #666; line-height: 1.8; margin-bottom: 4rem; }
+  .connect-form {
+    display: flex; gap: 0; max-width: 600px; margin: 0 auto 4rem;
+  }
+  .connect-input {
+    flex: 1;
+    background: #111; border: 1px solid #333; border-right: none;
+    color: var(--paper); padding: 1.2rem 1.5rem;
+    font-family: 'Space Mono', monospace; font-size: 13px;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+  .connect-input:focus { border-color: var(--acid); }
+  .connect-input::placeholder { color: #444; }
+  .connect-btn {
+    background: var(--acid); color: var(--ink);
+    border: none; padding: 1.2rem 2.5rem;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px; letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  .connect-btn:hover { background: var(--rust); color: var(--paper); }
+  .connect-details {
+    display: flex; justify-content: center; gap: 5rem;
+    font-size: 12px; color: #555;
+  }
+  .detail-item { display: flex; flex-direction: column; gap: 0.4rem; }
+  .detail-label { color: var(--acid); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; }
+
+  /* FOOTER */
+  footer {
+    background: #050505;
+    padding: 2rem 3rem;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; color: #333; letter-spacing: 0.1em;
+  }
+  footer .ft-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px; color: #333; letter-spacing: 0.1em;
+  }
+
+  /* REVEAL ANIMATIONS */
+  .reveal {
+    opacity: 0; transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.16,1,0.3,1);
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-text">
+    <span style="animation-delay:0.1s">F</span><span style="animation-delay:0.2s">O</span><span style="animation-delay:0.3s">R</span><span style="animation-delay:0.4s">M</span><span style="animation-delay:0.5s">A</span>
+  </div>
+  <div class="loader-bar"></div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">FORMA</a>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#vision">Vision</a></li>
+    <li><a href="#projects">Projects</a></li>
+    <li><a href="#innovation">Innovation</a></li>
+    <li><a href="#connect">Connect</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-left">
+    <p class="hero-eyebrow">Est. 2008 — New Delhi, India</p>
+    <h1 class="hero-title">
+      <span class="line"><span>WE</span></span>
+      <span class="line"><span>BUILD</span></span>
+      <span class="line"><span class="accent">FUTURES</span></span>
+    </h1>
+    <p class="hero-subtitle">Architecture that speaks before it's built. We design spaces that challenge gravity, defy convention, and reshape skylines.</p>
+  </div>
+  <div class="hero-right">
+    <canvas class="hero-canvas" id="heroCanvas"></canvas>
+  </div>
+  <div class="hero-scroll">
+    <div class="scroll-line"></div>
+    Scroll to explore
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-track" id="marqueeTrack">
+    <!-- filled by JS -->
+  </div>
+</div>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="about-left reveal">
+    <div class="section-label">About Us</div>
+    <h2 class="about-heading">Where <em>form</em> meets <em>purpose</em></h2>
+    <p class="about-text">FORMA is a multidisciplinary architecture studio rooted in bold ideas and precise execution. For over 15 years, we've crafted environments where human experience and structural poetry intersect.</p>
+    <div class="about-stats">
+      <div class="stat-box">
+        <div class="stat-num">180+</div>
+        <div class="stat-label">Projects Built</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">24</div>
+        <div class="stat-label">Countries</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">38</div>
+        <div class="stat-label">Awards Won</div>
+      </div>
+    </div>
+  </div>
+  <div class="about-right reveal">
+    <canvas class="about-grid-art" id="aboutCanvas"></canvas>
+  </div>
+</section>
+
+<!-- VISION -->
+<section id="vision">
+  <div class="vision-header reveal">
+    <div class="vision-heading">
+      GOALS &<br><span class="outline">VISION</span>
+    </div>
+    <p class="vision-intro">We believe architecture is the language of civilization. Every line drawn is a statement about the future we want to inhabit.</p>
+  </div>
+  <div class="vision-cards">
+    <div class="vision-card reveal">
+      <div class="vision-num">01</div>
+      <h3 class="vision-card-title">Human-Centred Design</h3>
+      <p class="vision-card-text">Every structure we raise begins with asking how it will be lived in, felt, and remembered — not merely seen from afar.</p>
+    </div>
+    <div class="vision-card reveal">
+      <div class="vision-num">02</div>
+      <h3 class="vision-card-title">Ecological Permanence</h3>
+      <p class="vision-card-text">We design with the Earth as a collaborator, not a resource. Net-zero commitments are embedded from the first sketch.</p>
+    </div>
+    <div class="vision-card reveal">
+      <div class="vision-num">03</div>
+      <h3 class="vision-card-title">Iconic Legacies</h3>
+      <p class="vision-card-text">Our goal: buildings that outlive trends — timeless in form, radical in impact, and undeniable in cultural weight.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PROJECTS -->
+<section id="projects">
+  <div class="projects-header reveal">
+    <div class="projects-heading">SELECTED<br><span>WORKS</span></div>
+    <a href="#" class="view-all">View All Projects →</a>
+  </div>
+  <div class="projects-scroll">
+    <div class="project-card">
+      <canvas class="project-canvas" id="proj1" width="400" height="540"></canvas>
+      <div class="project-year">2023</div>
+      <div class="project-info">
+        <div class="project-type">Commercial</div>
+        <div class="project-name">Helix Tower</div>
+        <div class="project-loc">Mumbai, India</div>
+      </div>
+    </div>
+    <div class="project-card">
+      <canvas class="project-canvas" id="proj2" width="400" height="540"></canvas>
+      <div class="project-year">2022</div>
+      <div class="project-info">
+        <div class="project-type">Cultural</div>
+        <div class="project-name">Tessera Arts Hub</div>
+        <div class="project-loc">Bengaluru, India</div>
+      </div>
+    </div>
+    <div class="project-card">
+      <canvas class="project-canvas" id="proj3" width="400" height="540"></canvas>
+      <div class="project-year">2021</div>
+      <div class="project-info">
+        <div class="project-type">Residential</div>
+        <div class="project-name">Cascade Villa</div>
+        <div class="project-loc">Goa, India</div>
+      </div>
+    </div>
+    <div class="project-card">
+      <canvas class="project-canvas" id="proj4" width="400" height="540"></canvas>
+      <div class="project-year">2020</div>
+      <div class="project-info">
+        <div class="project-type">Civic</div>
+        <div class="project-name">Horizon Bridge</div>
+        <div class="project-loc">Dubai, UAE</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INNOVATION -->
+<section id="innovation">
+  <div class="reveal">
+    <div class="section-label">Innovation</div>
+    <h2 class="innov-heading">DESIGN<br><span class="line2">TOMORROW</span></h2>
+    <p class="innov-text">Our R&D lab explores parametric computation, generative form-finding, and AI-assisted spatial reasoning. We don't just build — we prototype the future of the built environment.</p>
+    <div class="innov-pills">
+      <div class="pill">Parametric Design</div>
+      <div class="pill">BIM Integration</div>
+      <div class="pill">AI Planning</div>
+      <div class="pill">Biophilic Systems</div>
+      <div class="pill">Smart Materials</div>
+    </div>
+  </div>
+  <div class="innov-art reveal">
+    <canvas class="innov-canvas" id="innovCanvas"></canvas>
+  </div>
+</section>
+
+<!-- CONNECT -->
+<section id="connect">
+  <div class="connect-bg-text">TALK</div>
+  <div class="connect-content reveal">
+    <div class="connect-label">Connect With Us</div>
+    <h2 class="connect-heading">Let's Build<br><em>Something Bold</em></h2>
+    <p class="connect-sub">Have a project in mind? Drop your email and<br>our team will get back within 24 hours.</p>
+    <div class="connect-form">
+      <input type="email" class="connect-input" placeholder="your@email.com">
+      <button class="connect-btn">START →</button>
+    </div>
+    <div class="connect-details">
+      <div class="detail-item">
+        <span class="detail-label">Studio</span>
+        <span>New Delhi, India</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">Email</span>
+        <span>hello@formastudio.in</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">Phone</span>
+        <span>+91 11 4000 0000</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="ft-logo">FORMA</div>
+  <div>© 2025 Forma Architecture Studio. All rights reserved.</div>
+  <div>New Delhi · Mumbai · Dubai</div>
+</footer>
+
+<script>
+// ---- CURSOR ----
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx - 6 + 'px';
+  cursor.style.top = my - 6 + 'px';
+});
+(function animRing() {
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) *.12;
+  ring.style.left = rx - 20 + 'px';
+  ring.style.top = ry - 20 + 'px';
+  requestAnimationFrame(animRing);
+})();
+
+// ---- LOADER ----
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('loader').style.opacity = '0';
+    document.getElementById('loader').style.transition = 'opacity 0.6s ease';
+    setTimeout(() => document.getElementById('loader').style.display = 'none', 600);
+  }, 2000);
+});
+
+// ---- MARQUEE ----
+const items = ['Architecture', 'Sustainability', 'Innovation', 'Precision', 'Heritage', 'Future'];
+const track = document.getElementById('marqueeTrack');
+[...items, ...items, ...items, ...items].forEach(t => {
+  const el = document.createElement('div');
+  el.className = 'marquee-item';
+  el.innerHTML = `<span class="marquee-dot"></span>${t}`;
+  track.appendChild(el);
+});
+
+// ---- HERO CANVAS ----
+const hc = document.getElementById('heroCanvas');
+const hctx = hc.getContext('2d');
+function resizeHero() { hc.width = hc.offsetWidth; hc.height = hc.offsetHeight; }
+resizeHero();
+let hTime = 0;
+function drawHero() {
+  hctx.clearRect(0, 0, hc.width, hc.height);
+  hctx.fillStyle = '#0a0a0a';
+  hctx.fillRect(0, 0, hc.width, hc.height);
+  hTime += 0.008;
+  const cols = 8, rows = 12;
+  const cw = hc.width / cols, ch = hc.height / rows;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const x = c * cw, y = r * ch;
+      const wave = Math.sin(hTime + c * 0.6 + r * 0.4);
+      const size = (cw * 0.35) * (0.4 + 0.6 * ((wave + 1) / 2));
+      const alpha = 0.05 + 0.2 * ((wave + 1) / 2);
+      if ((c + r) % 3 === 0) {
+        hctx.strokeStyle = `rgba(200,255,0,${alpha})`;
+        hctx.lineWidth = 1;
+        hctx.strokeRect(x + cw/2 - size/2, y + ch/2 - size/2, size, size);
+      } else if ((c + r) % 3 === 1) {
+        hctx.strokeStyle = `rgba(200,80,31,${alpha * 0.7})`;
+        hctx.lineWidth = 1;
+        hctx.beginPath();
+        hctx.arc(x + cw/2, y + ch/2, size/2, 0, Math.PI * 2);
+        hctx.stroke();
+      } else {
+        hctx.strokeStyle = `rgba(242,237,230,${alpha * 0.5})`;
+        hctx.lineWidth = 0.5;
+        hctx.beginPath();
+        hctx.moveTo(x, y + ch);
+        hctx.lineTo(x + cw, y);
+        hctx.stroke();
+      }
+    }
+  }
+  // grid lines
+  hctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  hctx.lineWidth = 1;
+  for (let c = 0; c <= cols; c++) {
+    hctx.beginPath(); hctx.moveTo(c * cw, 0); hctx.lineTo(c * cw, hc.height); hctx.stroke();
+  }
+  for (let r = 0; r <= rows; r++) {
+    hctx.beginPath(); hctx.moveTo(0, r * ch); hctx.lineTo(hc.width, r * ch); hctx.stroke();
+  }
+  requestAnimationFrame(drawHero);
+}
+drawHero();
+window.addEventListener('resize', resizeHero);
+
+// ---- ABOUT CANVAS ----
+const ac = document.getElementById('aboutCanvas');
+const actx = ac.getContext('2d');
+function resizeAbout() { ac.width = ac.offsetWidth; ac.height = ac.offsetHeight; }
+resizeAbout();
+let aTime = 0;
+function drawAbout() {
+  actx.clearRect(0, 0, ac.width, ac.height);
+  actx.fillStyle = '#f2ede6';
+  actx.fillRect(0, 0, ac.width, ac.height);
+  aTime += 0.01;
+  const n = 12;
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      const x = (i / n) * ac.width;
+      const y = (j / n) * ac.height;
+      const d = Math.sin(aTime + i * 0.5) * Math.cos(aTime * 0.7 + j * 0.4);
+      if (d > 0.3) {
+        actx.fillStyle = `rgba(10,10,10,${(d - 0.3) * 0.7})`;
+        const s = (ac.width / n) * 0.6 * d;
+        actx.fillRect(x, y, s, s);
+      }
+    }
+  }
+  // Large bold line
+  actx.strokeStyle = 'rgba(200,75,31,0.6)';
+  actx.lineWidth = 3;
+  actx.beginPath();
+  actx.moveTo(0, ac.height * 0.4);
+  for (let x = 0; x <= ac.width; x += 4) {
+    const y = ac.height * 0.4 + Math.sin(x * 0.02 + aTime * 2) * 40;
+    actx.lineTo(x, y);
+  }
+  actx.stroke();
+  requestAnimationFrame(drawAbout);
+}
+drawAbout();
+window.addEventListener('resize', resizeAbout);
+
+// ---- PROJECT CANVASES ----
+const palettes = [
+  ['#1a1a2e', '#c84b1f', '#c8ff00'],
+  ['#0d1117', '#4a90e2', '#c8ff00'],
+  ['#1a0a00', '#c84b1f', '#f2ede6'],
+  ['#050510', '#7c3aed', '#c8ff00']
+];
+function drawProject(id, pal) {
+  const c = document.getElementById(id);
+  const ctx = c.getContext('2d');
+  let t = 0;
+  function draw() {
+    ctx.fillStyle = pal[0]; ctx.fillRect(0, 0, 400, 540);
+    t += 0.006;
+    for (let i = 0; i < 8; i++) {
+      const x = 50 + i * 42;
+      const h = 100 + Math.sin(t + i) * 80;
+      const y = 540 - h;
+      ctx.strokeStyle = pal[1];
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x, y, 30, h);
+      ctx.fillStyle = `rgba(${parseInt(pal[2].slice(1,3),16)},${parseInt(pal[2].slice(3,5),16)},${parseInt(pal[2].slice(5,7),16)},0.15)`;
+      ctx.fillRect(x, y, 30, h);
+    }
+    // Horizon line
+    const hy = 300 + Math.sin(t * 0.5) * 20;
+    ctx.strokeStyle = pal[2]; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(0, hy); ctx.lineTo(400, hy); ctx.stroke();
+    // Circles
+    for (let k = 0; k < 3; k++) {
+      const r = 15 + k * 25;
+      ctx.strokeStyle = `rgba(${parseInt(pal[2].slice(1,3),16)},${parseInt(pal[2].slice(3,5),16)},${parseInt(pal[2].slice(5,7),16)},${0.2 - k*0.05})`;
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.arc(200, 200 + Math.sin(t + k) * 30, r + Math.sin(t * 2 + k) * 8, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+['proj1','proj2','proj3','proj4'].forEach((id, i) => drawProject(id, palettes[i]));
+
+// ---- INNOVATION CANVAS ----
+const ic = document.getElementById('innovCanvas');
+const ictx = ic.getContext('2d');
+function resizeInnov() { ic.width = ic.offsetWidth; ic.height = ic.offsetHeight; }
+resizeInnov();
+let iTime = 0;
+const nodes = Array.from({length: 20}, () => ({
+  x: Math.random(), y: Math.random(),
+  vx: (Math.random() - 0.5) * 0.002,
+  vy: (Math.random() - 0.5) * 0.002
+}));
+function drawInnov() {
+  ictx.clearRect(0, 0, ic.width, ic.height);
+  ictx.fillStyle = '#f2ede6'; ictx.fillRect(0, 0, ic.width, ic.height);
+  iTime += 0.01;
+  nodes.forEach(n => {
+    n.x += n.vx; n.y += n.vy;
+    if (n.x < 0 || n.x > 1) n.vx *= -1;
+    if (n.y < 0 || n.y > 1) n.vy *= -1;
+  });
+  // Connections
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i+1; j < nodes.length; j++) {
+      const dx = (nodes[i].x - nodes[j].x) * ic.width;
+      const dy = (nodes[i].y - nodes[j].y) * ic.height;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 180) {
+        ictx.strokeStyle = `rgba(200,75,31,${(1 - dist/180) * 0.4})`;
+        ictx.lineWidth = 1;
+        ictx.beginPath();
+        ictx.moveTo(nodes[i].x * ic.width, nodes[i].y * ic.height);
+        ictx.lineTo(nodes[j].x * ic.width, nodes[j].y * ic.height);
+        ictx.stroke();
+      }
+    }
+  }
+  // Nodes
+  nodes.forEach(n => {
+    ictx.fillStyle = '#0a0a0a';
+    ictx.beginPath();
+    ictx.arc(n.x * ic.width, n.y * ic.height, 4, 0, Math.PI * 2);
+    ictx.fill();
+  });
+  // Pulse
+  const pulse = Math.sin(iTime * 2) * 0.5 + 0.5;
+  ictx.strokeStyle = `rgba(200,255,0,${pulse * 0.6})`;
+  ictx.lineWidth = 2;
+  ictx.beginPath();
+  ictx.arc(ic.width/2, ic.height/2, 60 + pulse * 30, 0, Math.PI * 2);
+  ictx.stroke();
+  requestAnimationFrame(drawInnov);
+}
+drawInnov();
+window.addEventListener('resize', resizeInnov);
+
+// ---- SCROLL REVEAL ----
+const revEls = document.querySelectorAll('.reveal');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), 100);
+    }
+  });
+}, { threshold: 0.15 });
+revEls.forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
